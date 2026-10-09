@@ -1,0 +1,153 @@
+{
+    "name": "Stop Group Test",
+    "stops": [
+        {
+            "identifier": "Stop 1",
+            "latitude": 16.301138206381935,
+            "longitude": -16.188290091090437,
+            "address": "Ferrocarril Dolores s/n. Esc. 952",
+            "min_dispatch_date": "2019-11-27",
+            "max_dispatch_date": "2019-11-30",
+            "window_one_start": "11:31:19",
+            "window_one_end": "12:31:19",
+            "window_two_start": "14:31:19",
+            "window_two_end": "15:31:19",
+            "service_time": 37,
+            "priority": 8,
+            "dispatch_center": "Centro Despacho Stgo 64569",
+            "items": [
+                {
+                    "code": "Item 1",
+                    "description": "Description 1",
+                    "quantity": 42,
+                    "cost": 5,
+                    "capacities": [
+                        4
+                    ]
+                },
+                {
+                    "code": "Item 2",
+                    "description": "Description 2",
+                    "quantity": 34,
+                    "cost": 4,
+                    "capacities": [
+                        4,
+                        5
+                    ]
+                }
+            ],
+            "contact": {
+                "name": "Contact 1",
+                "identification": "Identification 1",
+                "phone": "931-728-663",
+                "email": "morris_beier@reilly.org"
+            },
+            "tags": [
+                {
+                    "type": "Type 1",
+                    "values": [
+                        "Value 1",
+                        "Value 2"
+                    ]
+                },
+                {
+                    "type": "Type 2",
+                    "values": [
+                        "Value 3",
+                        "Value 4"
+                    ]
+                }
+            ],
+            "groups": [
+                {
+                    "name": "Group One",
+                    "names": [
+                        "Value One",
+                        "Value Two"
+                    ]
+                },
+                {
+                    "name": "Group Two",
+                    "names": [
+                        "Value Three",
+                        "Value Four"
+                    ]
+                }
+            ]
+        },
+        {
+            "identifier": "Stop 2",
+            "latitude": 67.9007013225185,
+            "longitude": 132.46656079039963,
+            "address": "Carretera Graciela 16",
+            "min_dispatch_date": "2019-11-27",
+            "max_dispatch_date": "2019-11-30",
+            "window_one_start": "11:31:19",
+            "window_one_end": "12:31:19",
+            "window_two_start": "14:31:19",
+            "window_two_end": "15:31:19",
+            "service_time": 43,
+            "priority": 8,
+            "dispatch_center": "Centro Despacho Stgo 14882",
+            "items": [
+                {
+                    "code": "Item 3",
+                    "description": "Description 3",
+                    "quantity": 91,
+                    "cost": 4,
+                    "capacities": [
+                        2
+                    ]
+                },
+                {
+                    "code": "Item 4",
+                    "description": "Description 4",
+                    "quantity": 57,
+                    "cost": 4,
+                    "capacities": [
+                        6,
+                        6
+                    ]
+                }
+            ],
+            "contact": {
+                "name": "Contact 2",
+                "identification": "Identification 2",
+                "phone": "950 049 743",
+                "email": "andre@johnstonhegmann.org"
+            },
+            "tags": [
+                {
+                    "type": "Type 3",
+                    "values": [
+                        "Value 5",
+                        "Value 6"
+                    ]
+                },
+                {
+                    "type": "Type 4",
+                    "values": [
+                        "Value 7",
+                        "Value 8"
+                    ]
+                }
+            ],
+            "groups": [
+                {
+                    "name": "Group One",
+                    "names": [
+                        "Value One",
+                        "Value Two"
+                    ]
+                },
+                {
+                    "name": "Group Two",
+                    "names": [
+                        "Value Three",
+                        "Value Four"
+                    ]
+                }
+            ]
+        }
+    ]
+}

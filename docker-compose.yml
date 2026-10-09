@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notas_entrega_web
+    ports:
+      - "3000:3000"
+    restart: always
+    environment:
+      - NODE_ENV=production
+      # Here you can map other environment variables, for example:
+      # - DB_PROFIT_2K8_SERVER=${DB_PROFIT_2K8_SERVER}
+      # - DB_PROFIT_2K8_USER=${DB_PROFIT_2K8_USER}
+      # - DB_PROFIT_2K8_PASSWORD=${DB_PROFIT_2K8_PASSWORD}
+      # - DB_PROFIT_2K8_DATABASE=${DB_PROFIT_2K8_DATABASE}
+    env_file:
+      - .env.production

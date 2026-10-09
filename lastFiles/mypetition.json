@@ -1,0 +1,35 @@
+{
+    "name": "Prueba desde la APP",
+    "stops": [
+        {
+            "identifier": "101021",
+            "latitude": 10.433965,
+            "longitude": -66.860532,
+            "address": "AV FRANCISCO DE MIRANDA C.C. CENTRO PLAZA, TORRE C, PISO 21, OFIC. 21 - B URB LOS PALOS GRANDES CHAC",
+            "min_dispatch_date": "2026-07-21",
+            "max_dispatch_date": "2026-07-21",
+            "window_one_start": "07:00",
+            "window_one_end": "20:00",
+            "window_two_start": "",
+            "window_two_end": "",
+            "service_time": "",
+            "dispatch_center": "Almacen Mariche",
+            "items": [
+                {
+                    "code": "V0725010618  YUCA CHIPS - SAL - 180 Gr x 10 UNID - CAJA",
+                    "description": "Description 2",
+                    "quantity": 1,
+                    "cost": 1,
+                    "capacities": [
+                        1,
+                        3
+                    ]
+                }
+            ],
+            "contact": {
+                "name": "CORPORACION INVECA, C.A.",
+                "identification": "J309758977"
+            }
+        }
+    ]
+}
