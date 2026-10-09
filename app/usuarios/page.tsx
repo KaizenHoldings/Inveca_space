@@ -31,7 +31,8 @@ export default function UsuariosPage() {
   const fetchUsuarios = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/usuarios');
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const res = await fetch(`${basePath}/api/usuarios`);
       const json = await res.json();
 
       if (res.ok && json.success) {
@@ -88,7 +89,8 @@ export default function UsuariosPage() {
     if (!result.isConfirmed) return;
 
     try {
-      const res = await fetch('/api/usuarios', {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const res = await fetch(`${basePath}/api/usuarios`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_usuario: user.id_usuario, action: 'rol', nuevo_rol: nuevoRol })
@@ -153,7 +155,8 @@ export default function UsuariosPage() {
     if (!result.isConfirmed) return;
 
     try {
-      const res = await fetch('/api/usuarios', {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const res = await fetch(`${basePath}/api/usuarios`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_usuario: user.id_usuario, action: 'estado', esta_activo: nuevoEstado })

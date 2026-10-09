@@ -10,17 +10,19 @@ export default function Sidebar({ userRole }: { userRole?: string | null }) {
 
   const handleLogout = async () => {
     try {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       // 1. Borrar cookie del lado del cliente inmediatamente por si acaso
       document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       
       // 2. Hacer la petición a la API
-      await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
+      await fetch(`${basePath}/api/auth/logout`, { method: 'POST', cache: 'no-store' });
       
       // 3. Redirigir haciendo hard reload con bypass de caché del navegador
-      window.location.href = '/login?clear=' + new Date().getTime();
+      window.location.href = `${basePath}/login?clear=` + new Date().getTime();
     } catch (e) {
       console.error(e);
-      window.location.href = '/login?clear=' + new Date().getTime();
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      window.location.href = `${basePath}/login?clear=` + new Date().getTime();
     }
   };
 
@@ -40,7 +42,7 @@ export default function Sidebar({ userRole }: { userRole?: string | null }) {
       
       {/* Header del Sidebar */}
       <div className="h-24 flex items-center gap-3 px-6 border-b border-white/5">
-        <img src="/images/isologo.png" alt="Logo Sincronizador" className="w-10 h-10 object-contain drop-shadow-md" />
+        <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/images/isologo.png`} alt="Logo Sincronizador" className="w-10 h-10 object-contain drop-shadow-md" />
         <div>
           <h2 className="text-[#4b934e] font-bold text-lg leading-tight tracking-wide">Sistema Inveca</h2>
           <p className="text-slate-500 text-[11px] font-medium tracking-wider">PROFIT A DISPATCH</p>

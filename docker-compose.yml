@@ -18,3 +18,21 @@ services:
       # - DB_PROFIT_2K8_DATABASE=${DB_PROFIT_2K8_DATABASE}
     env_file:
       - .env.production
+    depends_on:
+      - sql_server
+
+  sql_server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: notas_entrega_db
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=SuperSecurePass123!
+      - MSSQL_PID=Express
+    volumes:
+      - sql_data:/var/opt/mssql
+    restart: always
+
+volumes:
+  sql_data:
