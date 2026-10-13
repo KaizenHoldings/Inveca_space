@@ -188,10 +188,42 @@ export default function Home() {
   };
 
   const handleSyncDispatchTrack = async () => {
+    const finalPetitionName = petitionName.trim() || `Sincronización ${almacen} - ${new Date().toLocaleDateString()}`;
+    const cantidadRegistros = filteredNotas.length;
+
+    // Modal de confirmación previo al envío
+    const confirmacion = await Swal.fire({
+      title: '¿Confirmar envío a DispatchTrack?',
+      html: `
+        <div style="text-align: left; font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+          <p style="margin-bottom: 12px;">
+            La información que se muestra en el cuadro (<strong>${cantidadRegistros}</strong> registro${cantidadRegistros === 1 ? '' : 's'}) será enviada a <strong>DispatchTrack</strong> bajo el nombre de:
+          </p>
+          <div style="background: rgba(20, 31, 51, 0.9); border: 1px solid rgba(75, 147, 78, 0.4); border-radius: 8px; padding: 10px 14px; font-weight: 600; color: #4b934e; word-break: break-word; text-align: center; font-size: 15px; margin-bottom: 14px;">
+            "${finalPetitionName}"
+          </div>
+          <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">
+            ¿Deseas proceder con el envío?
+          </p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Enviar a DispatchTrack',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#4b934e',
+      cancelButtonColor: '#64748b',
+      background: '#0d1421',
+      color: '#ffffff',
+      reverseButtons: true,
+    });
+
+    if (!confirmacion.isConfirmed) {
+      return;
+    }
+
     setSyncing(true);
     try {
-      const finalPetitionName = petitionName.trim() || `Sincronización ${almacen} - ${new Date().toLocaleDateString()}`;
-      
       const res = await fetch('/api/dispatchTrack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +243,9 @@ export default function Home() {
         icon: 'success',
         title: '¡Sincronización Iniciada!',
         html: `Se ha enviado la petición a DispatchTrack con éxito.<br><br><b>ID de Seguimiento:</b> ${json.trackingId}`,
-        confirmButtonColor: '#4b934e'
+        confirmButtonColor: '#4b934e',
+        background: '#0d1421',
+        color: '#ffffff',
       }).then(() => {
         setNotasEntrega([]);
         setHasSearched(false);
@@ -223,7 +257,9 @@ export default function Home() {
         icon: 'error',
         title: 'Error en la sincronización',
         text: sanitizeErrorMessage(error),
-        confirmButtonColor: '#4b934e'
+        confirmButtonColor: '#4b934e',
+        background: '#0d1421',
+        color: '#ffffff',
       });
     } finally {
       setSyncing(false);
