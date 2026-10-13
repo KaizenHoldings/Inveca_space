@@ -30,6 +30,11 @@ export async function POST(request: Request) {
       .setExpirationTime('12h')
       .sign(secret);
 
+    // Determinar si la cookie debe ser 'secure':
+    // Por defecto es false para que navegadores no rechacen la cookie en HTTP (por ej. http://<IP>:3000 con Docker).
+    // Solo será true si se define explícitamente COOKIE_SECURE=true en .env (para entornos con HTTPS/SSL).
+    const isCookieSecure = process.env.COOKIE_SECURE === 'true';
+
     const response = NextResponse.json({ success: true, user: usuario });
 
     // Establecer la cookie HTTP-Only
@@ -38,7 +43,7 @@ export async function POST(request: Request) {
       value: token,
       httpOnly: true,
       path: '/',
-      secure: process.env.NODE_ENV === 'production',
+      secure: isCookieSecure,
       sameSite: 'lax',
       maxAge: 12 * 60 * 60, // 12 hours
     });

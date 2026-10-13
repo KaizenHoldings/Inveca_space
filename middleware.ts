@@ -15,7 +15,8 @@ export async function middleware(request: NextRequest) {
   if (
     path.startsWith('/_next') ||
     path.startsWith('/favicon.ico') ||
-    path.startsWith('/icons/')
+    path.startsWith('/icons/') ||
+    path.startsWith('/images/')
   ) {
     return NextResponse.next();
   }

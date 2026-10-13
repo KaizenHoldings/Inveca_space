@@ -21,6 +21,7 @@ export default function Login() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ nombre_usuario: nombreUsuario, contrasena }),
       });
 
@@ -30,9 +31,8 @@ export default function Login() {
         throw new Error(data.error || 'Ocurrió un error al iniciar sesión');
       }
 
-      // Redirigir a la aplicación
-      router.push('/');
-      router.refresh(); // Para asegurar que el middleware y layout re-evalúan estado
+      // Redirigir a la aplicación con recarga completa para asegurar envío de cookies
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -80,7 +80,28 @@ export async function getPool2k12(): Promise<sql.ConnectionPool> {
 export async function getAppPool(): Promise<sql.ConnectionPool> {
   if (!poolApp) {
     try {
-      poolApp = await new sql.ConnectionPool(configApp).connect();
+      try {
+        poolApp = await new sql.ConnectionPool(configApp).connect();
+      } catch (connErr: any) {
+        const isDbNotFound = connErr?.number === 4060 || connErr?.message?.includes('Cannot open database');
+        if (isDbNotFound && configApp.database) {
+          console.log(`Base de datos '${configApp.database}' no encontrada. Creándola en 'master'...`);
+          const masterConfig: sql.config = { ...configApp, database: 'master' };
+          const masterPool = await new sql.ConnectionPool(masterConfig).connect();
+          const safeDbName = configApp.database.replace(/]/g, ']]');
+          await masterPool.request().query(`
+            IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = N'${safeDbName.replace(/'/g, "''")}')
+            BEGIN
+              CREATE DATABASE [${safeDbName}];
+            END
+          `);
+          await masterPool.close();
+          poolApp = await new sql.ConnectionPool(configApp).connect();
+        } else {
+          throw connErr;
+        }
+      }
+
       console.log('Connected to APP DB successfully');
 
       // Auto-creación de tabla de Usuarios
