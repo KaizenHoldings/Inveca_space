@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { UsuarioService, CrearUsuarioInput } from '@/services/UsuarioService';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 /**
  * Endpoint GET para obtener la lista de todos los usuarios del sistema.
@@ -9,8 +10,8 @@ export async function GET() {
     const usuarios = await UsuarioService.obtenerTodos();
     return NextResponse.json({ success: true, data: usuarios }, { status: 200 });
   } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : 'Error interno al consultar usuarios';
-    console.error('Error en GET /api/usuarios:', errorMsg);
+    const errorMsg = sanitizeErrorMessage(error);
+    console.error('Error en GET /api/usuarios:', error);
     return NextResponse.json({ success: false, message: errorMsg }, { status: 500 });
   }
 }
@@ -44,8 +45,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(resultado, { status: 201 });
   } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : 'Ocurrió un error al registrar el usuario';
-    console.error('Error en POST /api/usuarios:', errorMsg);
+    const errorMsg = sanitizeErrorMessage(error);
+    console.error('Error en POST /api/usuarios:', error);
     return NextResponse.json({ success: false, message: errorMsg }, { status: 500 });
   }
 }
@@ -113,8 +114,8 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(resultado, { status: 200 });
   } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : 'Error al modificar el usuario';
-    console.error('Error en PATCH /api/usuarios:', errorMsg);
+    const errorMsg = sanitizeErrorMessage(error);
+    console.error('Error en PATCH /api/usuarios:', error);
     return NextResponse.json({ success: false, message: errorMsg }, { status: 500 });
   }
 }

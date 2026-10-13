@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import ExcelJS from 'exceljs';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 export async function POST(req: Request) {
   try {
@@ -80,6 +81,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Error generando Excel:', error);
-    return NextResponse.json({ error: error.message || 'Error interno del servidor generando Excel' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error) }, { status: 500 });
   }
 }

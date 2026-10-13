@@ -5,6 +5,7 @@ import { Search, MapPin, Building, User, ChevronLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
 import DetalleClienteModal from '@/components/DetalleClienteModal';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 interface Cliente {
   CODIGO: string;
@@ -99,7 +100,7 @@ export default function ClientesPage() {
       Swal.fire({
         icon: 'error',
         title: 'Error de conexión',
-        text: error.message || 'No se pudo conectar con el servidor.',
+        text: sanitizeErrorMessage(error),
         confirmButtonColor: '#4b934e'
       });
     } finally {

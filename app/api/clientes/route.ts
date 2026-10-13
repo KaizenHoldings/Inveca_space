@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ProfitService } from '../../../services/ProfitService';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +20,6 @@ export async function POST(request: Request) {
     }, { status: 200 });
   } catch (error: any) {
     console.error('API Error:', error);
-    return NextResponse.json({ error: error.message || 'Error interno del servidor' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error) }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
 import Sidebar from '../components/Sidebar';
 import DetalleNotaModal from '../components/DetalleNotaModal';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 // Componente para celdas con Tooltip personalizado
 const TooltipCell = ({ value, isBold = false }: { value: string | number | null | undefined, isBold?: boolean }) => {
@@ -143,7 +144,7 @@ export default function Home() {
         Swal.fire({
           icon: 'error',
           title: 'Error consultando a BD',
-          text: json.error || 'Ocurrió un error inesperado al consultar los datos.',
+          text: sanitizeErrorMessage(json.error || 'Ocurrió un error inesperado al consultar los datos.'),
           confirmButtonColor: '#4b934e'
         });
         setHasSearched(false);
@@ -159,12 +160,10 @@ export default function Home() {
         // La petición fue cancelada por el usuario
         setHasSearched(false);
       } else {
-        // En lugar de hacer throw y console.error (que rompe la UI en dev mode),
-        // simplemente mostramos la alerta.
         Swal.fire({
           icon: 'error',
           title: 'Error de red o servidor',
-          text: error.message || 'No se pudo conectar con el servidor.',
+          text: sanitizeErrorMessage(error),
           confirmButtonColor: '#4b934e'
         });
         setHasSearched(false);
@@ -209,7 +208,7 @@ export default function Home() {
       Swal.fire({
         icon: 'error',
         title: 'Error en la sincronización',
-        text: error.message,
+        text: sanitizeErrorMessage(error),
         confirmButtonColor: '#4b934e'
       });
     } finally {
@@ -266,7 +265,7 @@ export default function Home() {
 
     } catch (error: any) {
       console.error(error);
-      Swal.fire({ icon: 'error', title: 'Error de descarga', text: error.message, confirmButtonColor: '#4b934e' });
+      Swal.fire({ icon: 'error', title: 'Error de descarga', text: sanitizeErrorMessage(error), confirmButtonColor: '#4b934e' });
     }
   };
 

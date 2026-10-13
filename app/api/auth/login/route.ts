@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { UsuarioService } from '@/services/UsuarioService';
 import { SignJWT } from 'jose';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-local-dev-replace-me';
 
@@ -47,10 +48,9 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       maxAge: 12 * 60 * 60, // 12 hours
     });
-
     return response;
   } catch (error: any) {
     console.error('Error en login:', error);
-    return NextResponse.json({ error: error.message || 'Error interno del servidor' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error) }, { status: 500 });
   }
 }

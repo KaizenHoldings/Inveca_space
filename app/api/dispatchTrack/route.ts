@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { FormatService } from '../../../services/FormatService';
+import { sanitizeErrorMessage } from '@/lib/errorHandler';
 
 export async function POST(request: Request) {
   try {
@@ -45,6 +46,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('API Error DispatchTrack:', error);
-    return NextResponse.json({ error: error.message || 'Error interno enviando a DispatchTrack' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeErrorMessage(error) }, { status: 500 });
   }
 }
