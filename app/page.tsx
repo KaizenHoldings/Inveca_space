@@ -23,11 +23,20 @@ const TooltipCell = ({ value, isBold = false }: { value: string | number | null 
   );
 };
 
+// Función auxiliar para obtener la fecha de hoy en formato YYYY-MM-DD local
+const getFechaHoyISO = () => {
+  const hoy = new Date();
+  const year = hoy.getFullYear();
+  const month = String(hoy.getMonth() + 1).padStart(2, '0');
+  const day = String(hoy.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function Home() {
   const [profitVersion, setProfitVersion] = useState('2k8');
   const [almacen, setAlmacen] = useState('TODOS');
-  const [fechaMin, setFechaMin] = useState('2026-07-21');
-  const [fechaMax, setFechaMax] = useState('2026-07-21');
+  const [fechaMin, setFechaMin] = useState(getFechaHoyISO);
+  const [fechaMax, setFechaMax] = useState(getFechaHoyISO);
 
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -39,6 +48,11 @@ export default function Home() {
   ]);
 
   useEffect(() => {
+    // Asegurar que inicie con la fecha local de hoy del cliente
+    const hoy = getFechaHoyISO();
+    setFechaMin(hoy);
+    setFechaMax(hoy);
+
     // Establecer nombre por defecto con fecha y hora
     const now = new Date();
     const pad = (n: number) => n.toString().padStart(2, '0');
