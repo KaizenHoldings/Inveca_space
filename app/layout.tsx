@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DispatchSync | Profit",
   description: "Sincronizador de Profit a Dispatch",
+  icons: {
+    icon: "/images/isologo.png",
+    shortcut: "/images/isologo.png",
+    apple: "/images/isologo.png",
+  },
 };
 
 import { cookies } from 'next/headers';
