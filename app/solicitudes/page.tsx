@@ -48,10 +48,9 @@ export default function SolicitudesPage() {
   const fetchSolicitudes = async () => {
     setLoading(true);
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       const url = selectedStatus === 'TODAS' 
-        ? `${basePath}/api/solicitudes-coordenadas` 
-        : `${basePath}/api/solicitudes-coordenadas?status=${selectedStatus}`;
+        ? '/api/solicitudes-coordenadas' 
+        : `/api/solicitudes-coordenadas?status=${selectedStatus}`;
         
       const res = await fetch(url);
       const json = await res.json();
@@ -114,8 +113,7 @@ export default function SolicitudesPage() {
 
     setProcessingId(id_solicitud);
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/solicitudes-coordenadas`, {
+      const res = await fetch('/api/solicitudes-coordenadas', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_solicitud, status_solicitud: nuevoStatus })

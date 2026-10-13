@@ -52,8 +52,7 @@ export default function CrearUsuarioModal({ isOpen, onClose, onUserCreated }: Cr
 
     setIsSubmitting(true);
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/usuarios`, {
+      const res = await fetch('/api/usuarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

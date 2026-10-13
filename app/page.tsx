@@ -46,8 +46,7 @@ export default function Home() {
     setPetitionName(`Sincronizacion Profit ${dateStr} ${timeStr}`);
 
     // Cargar almacenes dinámicamente al montar el componente
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    fetch(`${basePath}/api/almacenes`)
+    fetch('/api/almacenes')
       .then(res => res.json())
       .then(json => {
         if (json.data && json.data.length > 0) {
@@ -124,8 +123,7 @@ export default function Home() {
     });
 
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/notas`, {
+      const res = await fetch('/api/notas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: signal,
@@ -181,8 +179,7 @@ export default function Home() {
     try {
       const finalPetitionName = petitionName.trim() || `Sincronización ${almacen} - ${new Date().toLocaleDateString()}`;
       
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/dispatchTrack`, {
+      const res = await fetch('/api/dispatchTrack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -237,8 +234,7 @@ export default function Home() {
         didOpen: () => Swal.showLoading()
       });
 
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/download-excel`, {
+      const res = await fetch('/api/download-excel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notas: filteredNotas })
@@ -383,7 +379,7 @@ export default function Home() {
           
           <header className="text-center mb-8 animate-[fadeInDown_0.8s_ease-out]">
             <h1 className="text-4xl md:text-5xl font-extrabold text-[#4b934e] mb-2 flex items-center justify-center gap-3">
-              <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/images/isologo.png`} alt="Logo Sincronizador" className="w-12 h-12 object-contain" />
+              <img src="/images/isologo.png" alt="Logo Sincronizador" className="w-12 h-12 object-contain" />
               Sincronizador
             </h1>
             <p className="text-lg text-slate-400">Sistema para obtener Formato para sistema Dispatch de Profit 2k8 y 2k12</p>
@@ -746,7 +742,7 @@ export default function Home() {
                     disabled={totalElements === 0}
                     title="Opciones"
                   >
-                    <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/icons/moreVert.svg`} alt="Menú" className="w-6 h-6 text-white brightness-0 invert" />
+                    <img src="/icons/moreVert.svg" alt="Menú" className="w-6 h-6 text-white brightness-0 invert" />
                   </button>
 
                   {isMenuOpen && (
@@ -839,7 +835,7 @@ export default function Home() {
       {/* Overlay de Sincronización */}
       {syncing && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#090d16]/70 backdrop-blur-md animate-[fadeIn_0.3s_ease-out_forwards]">
-          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/icons/loader.svg`} alt="Sincronizando" className="w-24 h-24 mb-6 drop-shadow-[0_0_15px_rgba(75,147,78,0.6)]" />
+          <img src="/icons/loader.svg" alt="Sincronizando" className="w-24 h-24 mb-6 drop-shadow-[0_0_15px_rgba(75,147,78,0.6)]" />
           <h2 className="text-3xl font-bold text-white tracking-wide">Enviando a DispatchTrack</h2>
           <p className="text-slate-300 mt-2 text-lg">Por favor, espera un momento...</p>
         </div>

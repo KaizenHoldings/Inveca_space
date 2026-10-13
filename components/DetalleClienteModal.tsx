@@ -77,8 +77,7 @@ export default function DetalleClienteModal({ selectedClient, onClose }: Detalle
         status_solicitud: 'PENDIENTE'
       };
 
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/solicitudes-coordenadas`, {
+      const res = await fetch('/api/solicitudes-coordenadas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

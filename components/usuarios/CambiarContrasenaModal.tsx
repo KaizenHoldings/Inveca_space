@@ -55,8 +55,7 @@ export default function CambiarContrasenaModal({ usuario, onClose, onSuccess }: 
 
     setIsSubmitting(true);
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const res = await fetch(`${basePath}/api/usuarios`, {
+      const res = await fetch('/api/usuarios', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
