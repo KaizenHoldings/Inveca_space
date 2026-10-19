@@ -8,6 +8,7 @@ export interface UsuarioDTO {
   id_usuario: number;
   nombre_completo: string;
   nombre_usuario: string;
+  correo?: string;
   rol_usuario: 'admin' | 'operador' | string;
   esta_activo: boolean;
 }
@@ -18,8 +19,21 @@ export interface UsuarioDTO {
 export interface CrearUsuarioInput {
   nombre_completo: string;
   nombre_usuario: string;
+  correo?: string;
   contrasena: string;
   rol_usuario: 'admin' | 'operador';
+}
+
+/**
+ * Interfaz para la edición integral de los datos de un usuario por parte del Administrador.
+ */
+export interface ActualizarUsuarioCompletoInput {
+  nombre_completo: string;
+  nombre_usuario: string;
+  correo?: string;
+  rol_usuario: 'admin' | 'operador';
+  esta_activo: boolean;
+  nueva_contrasena?: string;
 }
 
 /**
@@ -34,7 +48,7 @@ export class UsuarioService {
     try {
       const pool = await getAppPool();
       const result = await pool.request().query(`
-        SELECT id_usuario, nombre_completo, nombre_usuario, rol_usuario, esta_activo 
+        SELECT id_usuario, nombre_completo, nombre_usuario, correo, rol_usuario, esta_activo 
         FROM Usuarios 
         ORDER BY id_usuario DESC
       `);
@@ -54,7 +68,7 @@ export class UsuarioService {
     const result = await pool.request()
       .input('nombre_usuario', nombreUsuario)
       .query(`
-        SELECT id_usuario, nombre_completo, nombre_usuario, contrasena_hash, rol_usuario, esta_activo 
+        SELECT id_usuario, nombre_completo, nombre_usuario, correo, contrasena_hash, rol_usuario, esta_activo 
         FROM Usuarios 
         WHERE nombre_usuario = @nombre_usuario
       `);
@@ -65,7 +79,7 @@ export class UsuarioService {
   /**
    * Crea un nuevo usuario en la tabla Usuarios.
    * Verifica duplicidad en nombre_usuario y genera el hash seguro de la contraseña.
-   * @param data Objeto con nombre completo, usuario, contraseña y rol (admin o operador).
+   * @param data Objeto con nombre completo, usuario, correo, contraseña y rol (admin o operador).
    */
   static async crearUsuario(data: CrearUsuarioInput): Promise<{ success: boolean; message: string; usuario?: UsuarioDTO }> {
     try {
@@ -87,12 +101,13 @@ export class UsuarioService {
       const insertResult = await pool.request()
         .input('nombre_completo', data.nombre_completo.trim())
         .input('nombre_usuario', data.nombre_usuario.trim())
+        .input('correo', data.correo ? data.correo.trim().toLowerCase() : null)
         .input('contrasena_hash', contrasenaHash)
         .input('rol_usuario', data.rol_usuario)
         .query(`
-          INSERT INTO Usuarios (nombre_completo, nombre_usuario, contrasena_hash, rol_usuario, esta_activo)
-          OUTPUT INSERTED.id_usuario, INSERTED.nombre_completo, INSERTED.nombre_usuario, INSERTED.rol_usuario, INSERTED.esta_activo
-          VALUES (@nombre_completo, @nombre_usuario, @contrasena_hash, @rol_usuario, 1)
+          INSERT INTO Usuarios (nombre_completo, nombre_usuario, correo, contrasena_hash, rol_usuario, esta_activo)
+          OUTPUT INSERTED.id_usuario, INSERTED.nombre_completo, INSERTED.nombre_usuario, INSERTED.correo, INSERTED.rol_usuario, INSERTED.esta_activo
+          VALUES (@nombre_completo, @nombre_usuario, @correo, @contrasena_hash, @rol_usuario, 1)
         `);
 
       const nuevoUsuario = insertResult.recordset[0] as UsuarioDTO;
@@ -209,6 +224,101 @@ export class UsuarioService {
     } catch (error) {
       console.error('Error en UsuarioService.cambiarEstadoActivo:', error);
       throw new Error('Error al modificar el estado del usuario en la base de datos.');
+    }
+  }
+
+  /**
+   * Actualiza los datos completos de un usuario del sistema (nombre completo, usuario, correo, rol, estado y opcionalmente contraseña).
+   * CUMPLE REGLA ESTRICTA: Incluye la cláusula WHERE id_usuario = @id_usuario.
+   * @param idUsuario ID único del usuario a modificar.
+   * @param data Datos a actualizar.
+   */
+  static async actualizarUsuarioCompleto(
+    idUsuario: number,
+    data: ActualizarUsuarioCompletoInput
+  ): Promise<{ success: boolean; message: string; usuario?: UsuarioDTO }> {
+    try {
+      if (!data.nombre_completo?.trim() || !data.nombre_usuario?.trim() || !data.rol_usuario) {
+        return { success: false, message: 'El nombre completo, nombre de usuario y rol son obligatorios.' };
+      }
+
+      if (!['admin', 'operador'].includes(data.rol_usuario)) {
+        return { success: false, message: 'Rol inválido. Los roles permitidos son "admin" y "operador".' };
+      }
+
+      const pool = await getAppPool();
+
+      // 1. Verificar si el usuario existe
+      const usuarioActualResult = await pool.request()
+        .input('id_usuario', idUsuario)
+        .query(`SELECT id_usuario FROM Usuarios WHERE id_usuario = @id_usuario`);
+
+      if (usuarioActualResult.recordset.length === 0) {
+        return { success: false, message: 'El usuario solicitado no existe en la base de datos.' };
+      }
+
+      // 2. Verificar colisión de nombre de usuario con otra cuenta existente
+      const colisionResult = await pool.request()
+        .input('id_usuario', idUsuario)
+        .input('nombre_usuario', data.nombre_usuario.trim())
+        .query(`
+          SELECT id_usuario 
+          FROM Usuarios 
+          WHERE nombre_usuario = @nombre_usuario AND id_usuario != @id_usuario
+        `);
+
+      if (colisionResult.recordset.length > 0) {
+        return { success: false, message: `El nombre de usuario '${data.nombre_usuario.trim()}' ya está en uso por otra cuenta.` };
+      }
+
+      // 3. Preparar query de actualización con WHERE obligatorio
+      const request = pool.request()
+        .input('id_usuario', idUsuario)
+        .input('nombre_completo', data.nombre_completo.trim())
+        .input('nombre_usuario', data.nombre_usuario.trim())
+        .input('correo', data.correo?.trim() ? data.correo.trim().toLowerCase() : null)
+        .input('rol_usuario', data.rol_usuario)
+        .input('esta_activo', data.esta_activo ? 1 : 0);
+
+      let queryUpdate = `
+        UPDATE Usuarios
+        SET nombre_completo = @nombre_completo,
+            nombre_usuario = @nombre_usuario,
+            correo = @correo,
+            rol_usuario = @rol_usuario,
+            esta_activo = @esta_activo
+      `;
+
+      if (data.nueva_contrasena && data.nueva_contrasena.trim().length > 0) {
+        if (data.nueva_contrasena.trim().length < 4) {
+          return { success: false, message: 'La nueva contraseña debe tener un mínimo de 4 caracteres.' };
+        }
+        const hash = bcrypt.hashSync(data.nueva_contrasena.trim(), 10);
+        request.input('contrasena_hash', hash);
+        queryUpdate += `, contrasena_hash = @contrasena_hash`;
+      }
+
+      queryUpdate += `
+        OUTPUT INSERTED.id_usuario, INSERTED.nombre_completo, INSERTED.nombre_usuario, INSERTED.correo, INSERTED.rol_usuario, INSERTED.esta_activo
+        WHERE id_usuario = @id_usuario;
+      `;
+
+      const result = await request.query(queryUpdate);
+
+      if (result.recordset.length === 0) {
+        return { success: false, message: 'No se pudo actualizar el registro del usuario.' };
+      }
+
+      const usuarioActualizado = result.recordset[0] as UsuarioDTO;
+
+      return {
+        success: true,
+        message: `Usuario '${usuarioActualizado.nombre_usuario}' actualizado exitosamente.`,
+        usuario: usuarioActualizado
+      };
+    } catch (error) {
+      console.error('Error en UsuarioService.actualizarUsuarioCompleto:', error);
+      throw new Error('Ocurrió un error al actualizar los datos del usuario en la base de datos.');
     }
   }
 

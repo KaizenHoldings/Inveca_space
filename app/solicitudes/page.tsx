@@ -98,7 +98,9 @@ export default function SolicitudesPage() {
 
     const result = await Swal.fire({
       title: `¿Confirmar acción?`,
-      html: `¿Estás seguro de <strong>${accionText}</strong> la propuesta de coordenadas del cliente <br/><span style="color:#4b934e; font-weight:bold;">${clienteDesc}</span>?`,
+      html: nuevoStatus === 'APROBADA'
+        ? `¿Estás seguro de <strong>aprobar</strong> la propuesta de coordenadas para el cliente <br/><span style="color:#4b934e; font-weight:bold;">${clienteDesc}</span>?<br/><br/><small style="color:#94a3b8;">Esta acción actualizará directamente las coordenadas en la base de datos de <strong>Profit 2k12</strong>.</small>`
+        : `¿Estás seguro de <strong>denegar</strong> la propuesta de coordenadas del cliente <br/><span style="color:#ff4d4f; font-weight:bold;">${clienteDesc}</span>?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: colorButton,

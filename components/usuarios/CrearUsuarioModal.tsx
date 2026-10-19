@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { X, UserPlus, Shield, User, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { X, UserPlus, Shield, User, Lock, CheckCircle, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 
 interface CrearUsuarioModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface CrearUsuarioModalProps {
 export default function CrearUsuarioModal({ isOpen, onClose, onUserCreated }: CrearUsuarioModalProps) {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [nombreUsuario, setNombreUsuario] = useState('');
+  const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [rolUsuario, setRolUsuario] = useState<'admin' | 'operador'>('operador');
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
@@ -26,6 +27,7 @@ export default function CrearUsuarioModal({ isOpen, onClose, onUserCreated }: Cr
   const handleReset = () => {
     setNombreCompleto('');
     setNombreUsuario('');
+    setCorreo('');
     setContrasena('');
     setRolUsuario('operador');
     setErrorMessage('');
@@ -58,6 +60,7 @@ export default function CrearUsuarioModal({ isOpen, onClose, onUserCreated }: Cr
         body: JSON.stringify({
           nombre_completo: nombreCompleto.trim(),
           nombre_usuario: nombreUsuario.trim().toLowerCase(),
+          correo: correo.trim() || undefined,
           contrasena: contrasena.trim(),
           rol_usuario: rolUsuario
         })
@@ -110,22 +113,45 @@ export default function CrearUsuarioModal({ isOpen, onClose, onUserCreated }: Cr
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[80vh]">
           
-          {/* Nombre Completo */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Nombre Completo *
-            </label>
-            <div className="relative">
-              <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                type="text"
-                value={nombreCompleto}
-                onChange={e => setNombreCompleto(e.target.value)}
-                placeholder="Ejemplo: Carlos Mendoza"
-                disabled={isSubmitting}
-                className="w-full bg-[#090d16]/90 border border-white/15 focus:border-[#4b934e] pl-11 pr-4 py-3 rounded-xl text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4b934e]/30 placeholder-slate-500 transition-all shadow-inner"
-              />
+          {/* Nombre Completo y Correo Electrónico */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            {/* Nombre Completo */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Nombre Completo *
+              </label>
+              <div className="relative">
+                <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  value={nombreCompleto}
+                  onChange={e => setNombreCompleto(e.target.value)}
+                  placeholder="Ejemplo: Carlos Mendoza"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#090d16]/90 border border-white/15 focus:border-[#4b934e] pl-11 pr-4 py-3 rounded-xl text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4b934e]/30 placeholder-slate-500 transition-all shadow-inner"
+                />
+              </div>
             </div>
+
+            {/* Correo Electrónico */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Correo Electrónico
+              </label>
+              <div className="relative">
+                <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="email"
+                  value={correo}
+                  onChange={e => setCorreo(e.target.value)}
+                  placeholder="Ejemplo: cmendoza@inveca.com"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#090d16]/90 border border-white/15 focus:border-[#4b934e] pl-11 pr-4 py-3 rounded-xl text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#4b934e]/30 placeholder-slate-500 transition-all shadow-inner"
+                />
+              </div>
+            </div>
+
           </div>
 
           {/* Usuario e Inicial Contraseña */}

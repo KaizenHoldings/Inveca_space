@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, MapPin, Building, User, ChevronLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
@@ -33,16 +34,23 @@ const TooltipCell = ({ value, isBold = false }: { value: string | number | null 
   );
 };
 
-export default function ClientesPage() {
-  const [searchQuery, setSearchQuery] = useState('');
+function ClientesContent() {
+  const searchParams = useSearchParams();
+  const paramCodigo = searchParams.get('codigo') || '';
+  const paramRif = searchParams.get('rif') || '';
+  const paramDesc = searchParams.get('descripcion') || '';
+  const paramTab = (searchParams.get('tab') as 'detalles' | 'configuracion') || 'detalles';
+
+  const [searchQuery, setSearchQuery] = useState(paramDesc);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
+  const [modalInitialTab, setModalInitialTab] = useState<'detalles' | 'configuracion'>(paramTab);
   const [isSearching, setIsSearching] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   // Filtros y paginación en el servidor
-  const [filterCodigo, setFilterCodigo] = useState('');
-  const [filterRif, setFilterRif] = useState('');
+  const [filterCodigo, setFilterCodigo] = useState(paramCodigo);
+  const [filterRif, setFilterRif] = useState(paramRif);
   const [filterDireccion, setFilterDireccion] = useState('');
   const [excluirCadenas, setExcluirCadenas] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,7 +93,7 @@ export default function ClientesPage() {
           text: json.error || 'Ocurrió un error inesperado al consultar los clientes.',
           confirmButtonColor: '#4b934e'
         });
-        return;
+        return null;
       }
 
       setClientes(json.data || []);
@@ -96,6 +104,7 @@ export default function ClientesPage() {
       setTotalPages(json.totalPages || 1);
       setCurrentPage(page);
       setHasLoaded(true);
+      return json;
     } catch (error: any) {
       Swal.fire({
         icon: 'error',
@@ -103,15 +112,38 @@ export default function ClientesPage() {
         text: sanitizeErrorMessage(error),
         confirmButtonColor: '#4b934e'
       });
+      return null;
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Precarga inicial del directorio al entrar a la pantalla
+  // Precarga inicial del directorio al entrar a la pantalla o abrir por parámetro de URL
   useEffect(() => {
-    fetchClientes(1);
-  }, []);
+    const loadInitialData = async () => {
+      const hasSpecificParam = Boolean(paramCodigo || paramRif || paramDesc);
+      const customFilters = hasSpecificParam ? {
+        codigo: paramCodigo,
+        rif: paramRif,
+        descripcion: paramDesc,
+      } : undefined;
+
+      const result = await fetchClientes(1, customFilters);
+
+      if (hasSpecificParam && result && result.data && result.data.length > 0) {
+        // Encontrar la mejor coincidencia exacta
+        const match = result.data.find((c: Cliente) => 
+          (paramCodigo && c.CODIGO.trim().toUpperCase() === paramCodigo.trim().toUpperCase()) ||
+          (paramRif && c.RIF.trim().toUpperCase() === paramRif.trim().toUpperCase())
+        ) || result.data[0];
+
+        setSelectedClient(match);
+        setModalInitialTab(paramTab);
+      }
+    };
+
+    loadInitialData();
+  }, [paramCodigo, paramRif, paramDesc, paramTab]);
 
   // Búsqueda en servidor con debounce al escribir o cambiar check de exclusión
   useEffect(() => {
@@ -150,6 +182,25 @@ export default function ClientesPage() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto space-y-6">
         
+        {/* Nota informativa de origen de datos Profit 2k12 */}
+        <div className="bg-[#141f33]/90 border border-[#4b934e]/40 rounded-xl p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-[fadeIn_0.3s_ease-out]">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#4b934e]/20 p-2.5 rounded-lg text-[#4b934e] shrink-0 border border-[#4b934e]/30">
+              <Building className="w-5 h-5" />
+            </div>
+            <div className="text-sm leading-relaxed">
+              <span className="font-bold text-white">Origen de datos:</span>{' '}
+              <span className="text-slate-300">
+                Los clientes, sucursales y coordenadas mostrados en este módulo provienen directamente del servidor maestro de{' '}
+                <strong className="text-[#4b934e] font-semibold">Profit 2k12</strong> (tabla <code className="bg-black/50 text-[#4b934e] font-mono px-1.5 py-0.5 rounded text-xs">saCliente</code>).
+              </span>
+            </div>
+          </div>
+          <span className="text-xs bg-[#4b934e]/10 text-[#4b934e] font-mono border border-[#4b934e]/30 px-3 py-1 rounded-full whitespace-nowrap self-start sm:self-center font-bold">
+            Servidor Profit 2k12
+          </span>
+        </div>
+
         {/* Search Bar */}
         <div className="bg-[#090d16] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-[#4b934e]" />
@@ -348,7 +399,21 @@ export default function ClientesPage() {
       <DetalleClienteModal 
         selectedClient={selectedClient} 
         onClose={() => setSelectedClient(null)} 
+        initialTab={modalInitialTab}
       />
     </div>
+  );
+}
+
+export default function ClientesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-[#4b934e]/30 border-t-[#4b934e] rounded-full animate-spin mb-4" />
+        <p className="text-slate-400 font-medium">Cargando módulo de clientes...</p>
+      </div>
+    }>
+      <ClientesContent />
+    </Suspense>
   );
 }

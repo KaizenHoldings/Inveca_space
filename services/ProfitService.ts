@@ -10,7 +10,7 @@ export class ProfitService {
       const pool = await getPool2k12();
       const result = await pool.request().query(`
         SELECT co_alma AS Codigo, des_alma AS Descripcion 
-        FROM saAlmacen 
+        FROM saAlmacen WITH (NOLOCK)
         ORDER BY co_alma
       `);
 
@@ -81,13 +81,13 @@ export class ProfitService {
         d.des_tran as TRANSPORTE_DESPACHO, 
         ' ' as FLETE,
         a.comentario as OBSERVASION
-        FROM not_ent a 
-        JOIN clientes b ON a.co_cli = b.co_cli
-        JOIN vendedor c ON a.co_ven = c.co_ven
-        JOIN transpor d ON a.co_tran = d.co_tran
-        JOIN reng_nde e ON e.fact_num = a.fact_num
-        JOIN art f ON f.co_art = e.co_art
-        JOIN sucursales g ON a.co_sucu = g.co_alma             
+        FROM not_ent a WITH (NOLOCK)
+        JOIN clientes b WITH (NOLOCK) ON a.co_cli = b.co_cli
+        JOIN vendedor c WITH (NOLOCK) ON a.co_ven = c.co_ven
+        JOIN transpor d WITH (NOLOCK) ON a.co_tran = d.co_tran
+        JOIN reng_nde e WITH (NOLOCK) ON e.fact_num = a.fact_num
+        JOIN art f WITH (NOLOCK) ON f.co_art = e.co_art
+        JOIN sucursales g WITH (NOLOCK) ON a.co_sucu = g.co_alma             
         WHERE a.FE_US_IN BETWEEN @FechaInicio AND @FechaFin                     
         AND (@Almacen = 'TODOS' OR e.co_alma = @Almacen)
         AND (@MinParada IS NULL OR a.fact_num >= @MinParada)
@@ -106,13 +106,27 @@ export class ProfitService {
       const result = await request.query(query);
       const notas = result.recordset;
 
-      // FASE 2: Cruce de datos con 2k12
+      // Inicializar cada nota con origen 2k8 y detectar si tiene '@'
+      for (const nota of notas) {
+        nota.ORIGEN_BD = '2k8';
+        const dir2 = (nota.DIRECCION_2 || '').trim();
+        const desc = (nota.DESCRIPCION || '').trim();
+        nota.TIENE_ARROBA_2K8 = dir2.includes('@') || desc.includes('@');
+        nota.DIRECCION_2_ORIGINAL_2K8 = dir2;
+        nota.CODIGO_CLIENTE = '';
+        nota.cliente2k12Encontrado = false;
+        nota.coordenadasDesde2k12 = false;
+      }
+
+      // FASE 2: Cruce de datos con 2k12 a través de DIRECCION_2 cuando contiene '@'
       const codigosExtraidos = new Set<string>();
 
       for (const nota of notas) {
-        const direccion2 = (nota.DIRECCION_2 || '').trim();
-        if (direccion2.includes('@')) {
-          const codigo = direccion2.split('@')[0].trim();
+        if (nota.TIENE_ARROBA_2K8) {
+          const dir2 = (nota.DIRECCION_2 || '').trim();
+          const desc = (nota.DESCRIPCION || '').trim();
+          const fuente = dir2.includes('@') ? dir2 : desc;
+          const codigo = fuente.split('@')[0].trim();
           if (codigo) {
             codigosExtraidos.add(codigo);
           }
@@ -140,18 +154,20 @@ export class ProfitService {
               direc1 as DIRECCION_1,
               direc2 as COORD,
               (CASE WHEN dir_ent2 IS NULL OR TRIM(dir_ent2) = '' THEN direc1 ELSE dir_ent2 END) as DIRECCION_2
-          FROM saCliente 
+          FROM saCliente WITH (NOLOCK)
           WHERE co_cli IN (${inClause})
         `;
 
         const res2k12 = await req2k12.query(query2k12);
         const clientesFrescos = new Map(res2k12.recordset.map(c => [c.co_cli.trim(), c]));
 
-        // Sobreescribir notas 2k8 con datos de 2k12
+        // Sobreescribir notas 2k8 con datos de 2k12 SOLO si el código existe en saCliente
         for (const nota of notas) {
-          const direccion2 = (nota.DIRECCION_2 || '').trim();
-          if (direccion2.includes('@')) {
-            const codigo = direccion2.split('@')[0].trim();
+          if (nota.TIENE_ARROBA_2K8) {
+            const dir2 = (nota.DIRECCION_2 || '').trim();
+            const desc = (nota.DESCRIPCION || '').trim();
+            const fuente = dir2.includes('@') ? dir2 : desc;
+            const codigo = fuente.split('@')[0].trim();
             const clienteFresco = clientesFrescos.get(codigo);
             if (clienteFresco) {
               nota.RIF = clienteFresco.RIF;
@@ -160,7 +176,18 @@ export class ProfitService {
               nota.DIRECCION_1 = clienteFresco.DIRECCION_1;
               nota.COORD = clienteFresco.COORD;
               nota.DIRECCION_2 = clienteFresco.DIRECCION_2;
+              nota.CODIGO_CLIENTE = clienteFresco.co_cli ? clienteFresco.co_cli.trim() : codigo;
+              nota.cliente2k12Encontrado = true;
+              nota.coordenadasDesde2k12 = true;
+            } else {
+              nota.CODIGO_CLIENTE = '';
+              nota.cliente2k12Encontrado = false;
+              nota.coordenadasDesde2k12 = false;
             }
+          } else {
+            nota.CODIGO_CLIENTE = '';
+            nota.cliente2k12Encontrado = false;
+            nota.coordenadasDesde2k12 = false;
           }
         }
       }
@@ -182,6 +209,7 @@ export class ProfitService {
         SELECT a.doc_num as NOTA,                             
         a.fec_emis as FECHA,                             
         a.fec_venc as VENC,                            
+        b.co_cli as CODIGO_CLIENTE,
         b.rif as RIF,                            
         trim(b.rif) + ' - ' + trim(b.cli_des) as CLIENTE,                            
         b.cli_des as DESCRIPCION_CLIENTE,                            
@@ -209,15 +237,15 @@ export class ProfitService {
         d.des_tran as TRANSPORTE_DESPACHO,                             
         ' ' as FLETE,                             
         ' ' as OBSERVASION                      
-        FROM saNotaDespachoVenta a                      
-        JOIN saCliente b ON a.co_cli = b.co_cli                     
-        JOIN saVendedor c ON a.co_ven = c.co_ven                     
-        JOIN saTransporte d ON a.co_tran = d.co_tran                     
-        JOIN saNotaDespachoVentaReng e ON e.doc_num = a.doc_num                      
-        JOIN saArticulo f ON f.co_art = e.co_art                     
-        JOIN saUnidad g ON e.co_uni = g.co_uni                     
-        JOIN saAlmacen h on e.co_alma = h.co_alma                     
-        JOIN saSucursal i on h.co_sucur = i.co_sucur                     
+        FROM saNotaDespachoVenta a WITH (NOLOCK)                      
+        JOIN saCliente b WITH (NOLOCK) ON a.co_cli = b.co_cli                     
+        JOIN saVendedor c WITH (NOLOCK) ON a.co_ven = c.co_ven                     
+        JOIN saTransporte d WITH (NOLOCK) ON a.co_tran = d.co_tran                     
+        JOIN saNotaDespachoVentaReng e WITH (NOLOCK) ON e.doc_num = a.doc_num                      
+        JOIN saArticulo f WITH (NOLOCK) ON f.co_art = e.co_art                     
+        JOIN saUnidad g WITH (NOLOCK) ON e.co_uni = g.co_uni                     
+        JOIN saAlmacen h WITH (NOLOCK) on e.co_alma = h.co_alma                     
+        JOIN saSucursal i WITH (NOLOCK) on h.co_sucur = i.co_sucur                     
         WHERE a.FE_US_IN BETWEEN @FechaInicio AND @FechaFin                     
         AND (@Almacen = 'TODOS' OR e.co_alma = @Almacen)
         AND (@MinParada IS NULL OR a.doc_num >= @MinParada)
@@ -234,7 +262,14 @@ export class ProfitService {
       request.input('ExcluirAnuladas', sql.Bit, excluirAnuladas ? 1 : 0);
 
       const result = await request.query(query);
-      return result.recordset;
+      return result.recordset.map(row => ({
+        ...row,
+        ORIGEN_BD: '2k12',
+        TIENE_ARROBA_2K8: false,
+        coordenadasDesde2k12: false,
+        CODIGO_CLIENTE: (row.CODIGO_CLIENTE || '').toString().trim(),
+        cliente2k12Encontrado: Boolean((row.CODIGO_CLIENTE || '').toString().trim())
+      }));
 
     } catch (error) {
       console.error('Error extrañendo datos 2k12:', error);
@@ -265,7 +300,7 @@ export class ProfitService {
   }> {
     try {
       const pool2k12 = await getPool2k12();
-      
+
       let descripcion = '';
       let codigo = '';
       let rif = '';
@@ -329,9 +364,9 @@ export class ProfitService {
           count(1) as total,
           sum(case when a.direc2 is not null and LTRIM(RTRIM(a.direc2)) <> '' and LTRIM(RTRIM(a.direc2)) <> '-' and UPPER(LTRIM(RTRIM(a.direc2))) <> 'NULL' and LTRIM(RTRIM(a.direc2)) <> '0' and LTRIM(RTRIM(a.direc2)) <> '0, 0' then 1 else 0 end) as totalConCoordenadas,
           sum(case when a.direc2 is null or LTRIM(RTRIM(a.direc2)) = '' or LTRIM(RTRIM(a.direc2)) = '-' or UPPER(LTRIM(RTRIM(a.direc2))) = 'NULL' or LTRIM(RTRIM(a.direc2)) = '0' or LTRIM(RTRIM(a.direc2)) = '0, 0' then 1 else 0 end) as totalSinCoordenadas
-        FROM saCliente a;
+        FROM saCliente a WITH (NOLOCK);
 
-        SELECT count(1) as totalFiltrated FROM saCliente a ${whereConditions};
+        SELECT count(1) as totalFiltrated FROM saCliente a WITH (NOLOCK) ${whereConditions};
 
         WITH PagedClientes AS (
           SELECT 
@@ -345,7 +380,7 @@ export class ProfitService {
               ELSE trim(a.direc2) 
             END as 'COORDENADAS',
             ROW_NUMBER() OVER (ORDER BY a.cli_des ASC, a.co_cli ASC) as RowNum
-          FROM saCliente a 
+          FROM saCliente a WITH (NOLOCK)
           ${whereConditions}
         )
         SELECT CODIGO, RIF, DESCRIPCION, [DIRECCION FISCAL], [DIRECCION DE ENTREGA], COORDENADAS
@@ -356,13 +391,13 @@ export class ProfitService {
 
       const result = await request.query(query);
       const recordsets = Object.values(result.recordsets || {});
-      
+
       // Estadísticas Globales
       const summaryRow = recordsets[0]?.[0] || { total: 0, totalConCoordenadas: 0, totalSinCoordenadas: 0 };
       const total = summaryRow.total || 0;
       const totalConCoordenadas = summaryRow.totalConCoordenadas || 0;
       const totalSinCoordenadas = summaryRow.totalSinCoordenadas || 0;
-      
+
       // Conteo específico del filtro actual para determinar total de páginas
       const filteredRow = recordsets[1]?.[0] || { totalFiltrated: 0 };
       const totalFiltrated = filteredRow.totalFiltrated || 0;
@@ -391,6 +426,36 @@ export class ProfitService {
 
     } catch (error) {
       console.error('Error buscando clientes en 2k12:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza las coordenadas de un cliente directamente en la base de datos Profit 2k12 (saCliente.direc2).
+   * CUMPLE REGLAS DE SEGURIDAD: Siempre incluye cláusula WHERE co_cli = @codigoCliente con parámetro seguro.
+   *
+   * @param codigoCliente Código único del cliente en 2k12 (saCliente.co_cli)
+   * @param coordenadas Cadena con las nuevas coordenadas a guardar (saCliente.direc2)
+   * @returns boolean true si se actualizó al menos una fila
+   */
+  static async actualizarCoordenadaCliente2k12(codigoCliente: string, coordenadas: string): Promise<boolean> {
+    try {
+      const pool = await getPool2k12();
+      const request = pool.request();
+
+      request.input('codigoCliente', sql.VarChar, codigoCliente.trim());
+      request.input('coordenadas', sql.VarChar, coordenadas.trim());
+
+      const query = `
+        UPDATE saCliente
+        SET direc2 = @coordenadas
+        WHERE co_cli = @codigoCliente;
+      `;
+
+      const result = await request.query(query);
+      return (result.rowsAffected[0] ?? 0) > 0;
+    } catch (error) {
+      console.error('Error actualizando coordenada en saCliente de Profit 2k12:', error);
       throw error;
     }
   }

@@ -37,7 +37,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const resultado = await UsuarioService.crearUsuario(body);
+    const resultado = await UsuarioService.crearUsuario({
+      ...body,
+      correo: body.correo ? body.correo.trim().toLowerCase() : undefined
+    });
 
     if (!resultado.success) {
       return NextResponse.json(resultado, { status: 400 });
@@ -56,10 +59,14 @@ export async function POST(request: Request) {
  */
 interface PatchUsuarioBody {
   id_usuario?: number;
-  action?: 'password' | 'rol' | 'estado';
+  action?: 'password' | 'rol' | 'estado' | 'actualizar';
   nueva_contrasena?: string;
   nuevo_rol?: 'admin' | 'operador';
   esta_activo?: boolean;
+  nombre_completo?: string;
+  nombre_usuario?: string;
+  correo?: string;
+  rol_usuario?: 'admin' | 'operador';
 }
 
 /**
@@ -67,6 +74,7 @@ interface PatchUsuarioBody {
  * - action = 'password': cambia la contraseña.
  * - action = 'rol': cambia entre 'admin' y 'operador'.
  * - action = 'estado': activa o bloquea al usuario.
+ * - action = 'actualizar': modifica todos los datos del usuario (nombre, usuario, correo, rol, estado, y clave opcional).
  */
 export async function PATCH(request: Request) {
   try {
@@ -77,7 +85,7 @@ export async function PATCH(request: Request) {
     }
 
     if (!body.action) {
-      return NextResponse.json({ success: false, message: 'Se debe especificar la acción (password, rol o estado).' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Se debe especificar la acción (password, rol, estado o actualizar).' }, { status: 400 });
     }
 
     let resultado: { success: boolean; message: string };
@@ -102,6 +110,23 @@ export async function PATCH(request: Request) {
           return NextResponse.json({ success: false, message: 'Debes indicar el estado activo (verdadero o falso).' }, { status: 400 });
         }
         resultado = await UsuarioService.cambiarEstadoActivo(body.id_usuario, body.esta_activo);
+        break;
+
+      case 'actualizar':
+        if (!body.nombre_completo || !body.nombre_usuario || !body.rol_usuario) {
+          return NextResponse.json(
+            { success: false, message: 'Nombre completo, nombre de usuario y rol son obligatorios.' },
+            { status: 400 }
+          );
+        }
+        resultado = await UsuarioService.actualizarUsuarioCompleto(body.id_usuario, {
+          nombre_completo: body.nombre_completo,
+          nombre_usuario: body.nombre_usuario,
+          correo: body.correo,
+          rol_usuario: body.rol_usuario,
+          esta_activo: typeof body.esta_activo === 'boolean' ? body.esta_activo : true,
+          nueva_contrasena: body.nueva_contrasena
+        });
         break;
 
       default:

@@ -1,40 +1,46 @@
 import sql from 'mssql';
 import bcrypt from 'bcryptjs';
 
+const commonPoolConfig = {
+  requestTimeout: 120000,
+  connectionTimeout: 30000,
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
+  options: {
+    encrypt: false,
+    trustServerCertificate: true,
+    requestTimeout: 120000,
+  },
+};
+
 // Configuration for 2k8 Database
 const config2k8: sql.config = {
+  ...commonPoolConfig,
   user: process.env.DB_2K8_USER,
   password: process.env.DB_2K8_PASSWORD,
   server: process.env.DB_2K8_SERVER || '',
   database: process.env.DB_2K8_DATABASE,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
 };
 
 // Configuration for 2k12 Database
 const config2k12: sql.config = {
+  ...commonPoolConfig,
   user: process.env.DB_2K12_USER,
   password: process.env.DB_2K12_PASSWORD,
   server: process.env.DB_2K12_SERVER || '',
   database: process.env.DB_2K12_DATABASE,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
 };
 
 // Configuration for APP Database (Módulo de Usuarios)
 const configApp: sql.config = {
+  ...commonPoolConfig,
   user: process.env.DB_APP_USER,
   password: process.env.DB_APP_PASSWORD,
   server: process.env.DB_APP_SERVER || 'localhost',
   database: process.env.DB_APP_DATABASE,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
 };
 
 // Pool instances
@@ -112,10 +118,21 @@ export async function getAppPool(): Promise<sql.ConnectionPool> {
             id_usuario INT IDENTITY(1,1) PRIMARY KEY,
             nombre_completo VARCHAR(255) NOT NULL,
             nombre_usuario VARCHAR(100) NOT NULL UNIQUE,
+            correo VARCHAR(255) NULL,
             contrasena_hash VARCHAR(255) NOT NULL,
             rol_usuario VARCHAR(50) NOT NULL,
             esta_activo BIT DEFAULT 1
           );
+        END
+        ELSE
+        BEGIN
+          IF NOT EXISTS (
+            SELECT * FROM sys.columns 
+            WHERE Name = N'correo' AND Object_ID = Object_ID(N'Usuarios')
+          )
+          BEGIN
+            ALTER TABLE Usuarios ADD correo VARCHAR(255) NULL;
+          END
         END
       `;
       await poolApp.request().query(createTableQuery);

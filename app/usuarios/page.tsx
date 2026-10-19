@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { ShieldCheck, UserPlus, Search, Key, Shield, User, RefreshCw, AlertCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, UserCheck, Lock, Unlock, ArrowRightLeft } from 'lucide-react';
+import { ShieldCheck, UserPlus, Search, Key, Shield, User, RefreshCw, AlertCircle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, UserCheck, Lock, Unlock, ArrowRightLeft, Mail, Edit3 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { UsuarioDTO } from '@/services/UsuarioService';
 import CrearUsuarioModal from '@/components/usuarios/CrearUsuarioModal';
 import CambiarContrasenaModal from '@/components/usuarios/CambiarContrasenaModal';
+import EditarUsuarioModal from '@/components/usuarios/EditarUsuarioModal';
 
 /**
  * Página principal de Gestión y Administración de Usuarios.
@@ -20,6 +21,8 @@ export default function UsuariosPage() {
   // Estados para modales
   const [isCrearOpen, setIsCrearOpen] = useState(false);
   const [usuarioParaClave, setUsuarioParaClave] = useState<UsuarioDTO | null>(null);
+  const [usuarioParaEditar, setUsuarioParaEditar] = useState<UsuarioDTO | null>(null);
+  const [isEditarOpen, setIsEditarOpen] = useState(false);
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -219,6 +222,7 @@ export default function UsuariosPage() {
     return list.filter(u => 
       (u.nombre_completo || '').toLowerCase().includes(q) ||
       (u.nombre_usuario || '').toLowerCase().includes(q) ||
+      (u.correo || '').toLowerCase().includes(q) ||
       (u.rol_usuario || '').toLowerCase().includes(q)
     );
   }, [usuarios, selectedRolFilter, searchQuery]);
@@ -413,6 +417,7 @@ export default function UsuariosPage() {
                   <th className="py-5 px-6 text-[#4b934e] w-20">ID</th>
                   <th className="py-5 px-6 text-[#4b934e]">NOMBRE COMPLETO</th>
                   <th className="py-5 px-6 text-[#4b934e]">USUARIO (LOGIN)</th>
+                  <th className="py-5 px-6 text-[#4b934e]">CORREO ELECTRÓNICO</th>
                   <th className="py-5 px-6 text-[#4b934e]">ROL ASIGNADO</th>
                   <th className="py-5 px-6 text-[#4b934e]">ESTADO DE ACCESO</th>
                   <th className="py-5 px-6 text-[#4b934e] text-center">ADMINISTRAR CUENTA</th>
@@ -440,6 +445,18 @@ export default function UsuariosPage() {
                         <span className="bg-[#090d16]/80 px-3 py-1.5 rounded-lg border border-white/10 inline-flex items-center gap-1.5 shadow-sm">
                           <User size={14} className="text-slate-500" /> @{user.nombre_usuario}
                         </span>
+                      </td>
+
+                      {/* CORREO ELECTRÓNICO */}
+                      <td className="px-6 py-4 text-sm text-slate-300">
+                        {user.correo ? (
+                          <span className="inline-flex items-center gap-1.5 font-medium text-slate-200">
+                            <Mail size={14} className="text-[#4b934e]" />
+                            {user.correo}
+                          </span>
+                        ) : (
+                          <span className="text-slate-600 italic text-xs">No registrado</span>
+                        )}
                       </td>
 
                       {/* ROL ASIGNADO */}
@@ -479,6 +496,19 @@ export default function UsuariosPage() {
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2.5">
                           
+                          {/* Modificar Datos Completos */}
+                          <button
+                            onClick={() => {
+                              setUsuarioParaEditar(user);
+                              setIsEditarOpen(true);
+                            }}
+                            className="bg-blue-500/20 hover:bg-blue-500 text-blue-400 hover:text-white border border-blue-500/40 hover:border-transparent px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                            title="Modificar datos del usuario (Nombre, login, correo, rol, estado y contraseña)"
+                          >
+                            <Edit3 size={15} />
+                            <span>Editar</span>
+                          </button>
+
                           {/* Cambiar Contraseña */}
                           <button
                             onClick={() => setUsuarioParaClave(user)}
@@ -582,6 +612,28 @@ export default function UsuariosPage() {
         onClose={() => setUsuarioParaClave(null)}
         onSuccess={() => {
           setUsuarioParaClave(null);
+        }}
+      />
+
+      <EditarUsuarioModal
+        usuario={usuarioParaEditar}
+        isOpen={isEditarOpen}
+        onClose={() => {
+          setIsEditarOpen(false);
+          setUsuarioParaEditar(null);
+        }}
+        onUserUpdated={() => {
+          setIsEditarOpen(false);
+          setUsuarioParaEditar(null);
+          Swal.fire({
+            icon: 'success',
+            title: '¡Usuario Actualizado!',
+            text: 'Los datos del usuario han sido modificados exitosamente.',
+            confirmButtonColor: '#4b934e',
+            background: '#0d1421',
+            color: '#fff'
+          });
+          fetchUsuarios();
         }}
       />
 

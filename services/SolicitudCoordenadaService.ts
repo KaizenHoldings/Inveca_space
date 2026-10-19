@@ -1,4 +1,5 @@
 import { getAppPool } from '@/lib/db/mssql';
+import { ProfitService } from './ProfitService';
 
 /**
  * Interfaz que representa una solicitud de cambio de coordenada de un cliente en el sistema local.
@@ -99,7 +100,8 @@ export class SolicitudCoordenadaService {
 
   /**
    * Actualiza el status de una solicitud existente (para aprobación o denegación por administrador).
-   * CUMPLE REGLA DE SISTEMA: Siempre incluye cláusula WHERE id_solicitud = @id_solicitud para evitar modificaciones accidentales en masa.
+   * Al APROBAR, actualiza automáticamente las coordenadas del cliente en la base de datos de Profit 2k12.
+   * CUMPLE REGLA DE SISTEMA: Siempre incluye cláusula WHERE en las consultas de actualización.
    * 
    * @param idSolicitud ID único de la solicitud a modificar.
    * @param nuevoStatus Nuevo estado atribuido ('APROBADA' o 'DENEGADA').
@@ -111,23 +113,67 @@ export class SolicitudCoordenadaService {
       const request = pool.request();
 
       request.input('id_solicitud', idSolicitud);
-      request.input('status_solicitud', nuevoStatus);
+
+      // 1. Obtener los datos de la solicitud
+      const checkResult = await request.query(`
+        SELECT id_solicitud, codigo_cliente, coordenada_propuesta, status_solicitud
+        FROM SolicitudesCoordenadas
+        WHERE id_solicitud = @id_solicitud
+      `);
+
+      if (!checkResult.recordset || checkResult.recordset.length === 0) {
+        return { success: false, message: 'No se encontró la solicitud especificada o el ID es incorrecto.' };
+      }
+
+      const solicitud = checkResult.recordset[0];
+
+      // 2. Si se aprueba, actualizar la coordenada en la BD Profit 2k12 (saCliente.direc2)
+      if (nuevoStatus === 'APROBADA') {
+        const codigoCliente = (solicitud.codigo_cliente || '').trim();
+        const coordenadaPropuesta = (solicitud.coordenada_propuesta || '').trim();
+
+        if (!codigoCliente || !coordenadaPropuesta) {
+          return {
+            success: false,
+            message: 'La solicitud no contiene un código de cliente o coordenada propuesta válida.'
+          };
+        }
+
+        // Ejecutar UPDATE en Profit 2k12 con WHERE explícito
+        const actualizadoEn2k12 = await ProfitService.actualizarCoordenadaCliente2k12(codigoCliente, coordenadaPropuesta);
+
+        if (!actualizadoEn2k12) {
+          return {
+            success: false,
+            message: `No se pudo actualizar el cliente con código "${codigoCliente}" en Profit 2k12. Verifique que exista en saCliente.`
+          };
+        }
+      }
+
+      // 3. Actualizar el status de la solicitud en la base de datos local
+      const updateReq = pool.request();
+      updateReq.input('id_solicitud', idSolicitud);
+      updateReq.input('status_solicitud', nuevoStatus);
 
       // QUERY DE MODIFICACION CON WHERE OBLIGATORIO POR REGLAS
-      const result = await request.query(`
+      const result = await updateReq.query(`
         UPDATE SolicitudesCoordenadas
         SET status_solicitud = @status_solicitud
         WHERE id_solicitud = @id_solicitud
       `);
 
       if (result.rowsAffected[0] === 0) {
-        return { success: false, message: 'No se encontró la solicitud especificada o el ID es incorrecto.' };
+        return { success: false, message: 'No se pudo actualizar el registro de la solicitud.' };
       }
 
-      return { success: true, message: `El status de la solicitud ha sido cambiado a ${nuevoStatus} correctamente.` };
-    } catch (error) {
+      const mensaje = nuevoStatus === 'APROBADA'
+        ? 'Solicitud APROBADA y coordenada actualizada con éxito en Profit 2k12.'
+        : `El status de la solicitud ha sido cambiado a ${nuevoStatus} correctamente.`;
+
+      return { success: true, message: mensaje };
+    } catch (error: any) {
       console.error('Error en SolicitudCoordenadaService.actualizarStatus:', error);
-      throw new Error('Error al intentar modificar el status de la solicitud.');
+      throw new Error(error.message || 'Error al intentar modificar el status de la solicitud.');
     }
   }
 }

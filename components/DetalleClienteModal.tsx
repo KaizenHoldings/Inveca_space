@@ -18,14 +18,15 @@ export interface ClienteModalData {
 interface DetalleClienteModalProps {
   selectedClient: ClienteModalData | null;
   onClose: () => void;
+  initialTab?: 'detalles' | 'configuracion';
 }
 
 /**
  * Componente Modal para mostrar el detalle de un cliente de Profit y gestionar sus configuraciones,
  * como la solicitud de actualización de coordenadas geográficas en el sistema local.
  */
-export default function DetalleClienteModal({ selectedClient, onClose }: DetalleClienteModalProps) {
-  const [activeTab, setActiveTab] = useState<'detalles' | 'configuracion'>('detalles');
+export default function DetalleClienteModal({ selectedClient, onClose, initialTab = 'detalles' }: DetalleClienteModalProps) {
+  const [activeTab, setActiveTab] = useState<'detalles' | 'configuracion'>(initialTab);
   const [coordenadaPropuesta, setCoordenadaPropuesta] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -34,12 +35,12 @@ export default function DetalleClienteModal({ selectedClient, onClose }: Detalle
   // Sincronizar el campo de texto y reiniciar mensajes al cambiar o abrir el cliente
   useEffect(() => {
     if (selectedClient) {
-      setActiveTab('detalles');
+      setActiveTab(initialTab);
       setCoordenadaPropuesta('');
       setSuccessMessage('');
       setErrorMessage('');
     }
-  }, [selectedClient]);
+  }, [selectedClient, initialTab]);
 
   if (!selectedClient) return null;
 

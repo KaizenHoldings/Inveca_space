@@ -825,7 +825,7 @@ export default function Home() {
               <table className="w-full border-collapse text-left whitespace-nowrap">
                 <thead>
                   <tr>
-                    {["CÓDIGO DE PARADA*", "LATITUD", "LONGITUD", "DIRECCION*", "NOMBRE ITEM*", "CANTIDAD*", "CODIGO ITEM", "FECHA MIN ENTREGA*", "FECHA MAX ENTREGA*", "MIN VENTANA HORARIA 1*", "MAX VENTANA HORARIA 1*", "MIN VENTANA HORARIA 2", "MAX VENTANA HORARIA 2", "COSTO ITEM", "CAPACIDAD UNO", "CAPACIDAD DOS", "SERVICE TIME", "IMPORTANCIA", "IDENTIFICADOR CONTACTO*", "NOMBRE CONTACTO*", "TELEFONO", "EMAIL CONTACTO", "CT ORIGEN*"].map((header, index) => (
+                    {["CÓDIGO DE PARADA*", "LATITUD", "LONGITUD", "NOMBRE CONTACTO*", "DIRECCION*", "NOMBRE ITEM*", "CANTIDAD*", "CODIGO ITEM", "FECHA MIN ENTREGA*", "FECHA MAX ENTREGA*", "MIN VENTANA HORARIA 1*", "MAX VENTANA HORARIA 1*", "MIN VENTANA HORARIA 2", "MAX VENTANA HORARIA 2", "COSTO ITEM", "CAPACIDAD UNO", "CAPACIDAD DOS", "SERVICE TIME", "IMPORTANCIA", "IDENTIFICADOR CONTACTO*", "TELEFONO", "EMAIL CONTACTO", "CT ORIGEN*"].map((header, index) => (
                       <th key={index} className="bg-[#090d16]/60 px-6 py-5 font-semibold text-xs tracking-wider text-[#4b934e] border-b border-white/10 uppercase">
                         {header}
                       </th>
@@ -834,33 +834,54 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {currentItems.length > 0 ? (
-                    currentItems.map((nota, i) => (
-                      <tr key={i} onClick={() => setSelectedRow(nota)} className="transition-all hover:bg-[#4b934e]/20 cursor-pointer border-b border-white/5 last:border-b-0">
-                        <TooltipCell value={nota.codigoParada} isBold={true} />
-                        <TooltipCell value={nota.latitud} />
-                        <TooltipCell value={nota.longitud} />
-                        <TooltipCell value={nota.direccion} />
-                        <TooltipCell value={nota.nombreItem} />
-                        <TooltipCell value={nota.cantidad} />
-                        <TooltipCell value={nota.codigoItem} />
-                        <TooltipCell value={nota.fechaMinEntrega} />
-                        <TooltipCell value={nota.fechaMaxEntrega} />
-                        <TooltipCell value={nota.minVentana1} />
-                        <TooltipCell value={nota.maxVentana1} />
-                        <TooltipCell value={nota.minVentana2} />
-                        <TooltipCell value={nota.maxVentana2} />
-                        <TooltipCell value={nota.costoItem} />
-                        <TooltipCell value={nota.capacidadUno} />
-                        <TooltipCell value={nota.capacidadDos} />
-                        <TooltipCell value={nota.serviceTime} />
-                        <TooltipCell value={nota.importancia} />
-                        <TooltipCell value={nota.identificadorContacto} />
-                        <TooltipCell value={nota.nombreContacto} />
-                        <TooltipCell value={nota.telefono} />
-                        <TooltipCell value={nota.emailContacto} />
-                        <TooltipCell value={nota.ctOrigen} />
-                      </tr>
-                    ))
+                    currentItems.map((nota, i) => {
+                      const hasCoords = Boolean(
+                        nota.latitud && 
+                        nota.latitud !== '-' && 
+                        nota.longitud && 
+                        nota.longitud !== '-' &&
+                        String(nota.latitud).trim() !== '' &&
+                        String(nota.longitud).trim() !== '' &&
+                        String(nota.latitud).trim() !== '0' &&
+                        String(nota.latitud).trim() !== '0, 0'
+                      );
+
+                      return (
+                        <tr 
+                          key={i} 
+                          onClick={() => setSelectedRow(nota)} 
+                          className={`transition-all cursor-pointer border-b border-white/5 last:border-b-0 ${
+                            hasCoords 
+                              ? 'hover:bg-[#4b934e]/20' 
+                              : 'bg-red-500/[0.08] hover:bg-red-500/[0.18] border-l-2 border-l-red-400/80'
+                          }`}
+                        >
+                          <TooltipCell value={nota.codigoParada} isBold={true} />
+                          <TooltipCell value={nota.latitud} />
+                          <TooltipCell value={nota.longitud} />
+                          <TooltipCell value={nota.nombreContacto} />
+                          <TooltipCell value={nota.direccion} />
+                          <TooltipCell value={nota.nombreItem} />
+                          <TooltipCell value={nota.cantidad} />
+                          <TooltipCell value={nota.codigoItem} />
+                          <TooltipCell value={nota.fechaMinEntrega} />
+                          <TooltipCell value={nota.fechaMaxEntrega} />
+                          <TooltipCell value={nota.minVentana1} />
+                          <TooltipCell value={nota.maxVentana1} />
+                          <TooltipCell value={nota.minVentana2} />
+                          <TooltipCell value={nota.maxVentana2} />
+                          <TooltipCell value={nota.costoItem} />
+                          <TooltipCell value={nota.capacidadUno} />
+                          <TooltipCell value={nota.capacidadDos} />
+                          <TooltipCell value={nota.serviceTime} />
+                          <TooltipCell value={nota.importancia} />
+                          <TooltipCell value={nota.identificadorContacto} />
+                          <TooltipCell value={nota.telefono} />
+                          <TooltipCell value={nota.emailContacto} />
+                          <TooltipCell value={nota.ctOrigen} />
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={23} className="text-center p-12 text-slate-400 text-lg">

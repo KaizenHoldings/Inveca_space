@@ -175,6 +175,14 @@ export class FormatService {
         telefono: '',
         emailContacto: '',
         ctOrigen: filaSql.DESCRIPCION_ALMACEN || '',
+        codigoCliente: (filaSql.CODIGO_CLIENTE || '').toString().trim(),
+        cliente2k12Encontrado: Boolean(filaSql.cliente2k12Encontrado && filaSql.CODIGO_CLIENTE),
+        origenBd: (filaSql.ORIGEN_BD || '').toString().trim(),
+        tieneArroba2k8: Boolean(filaSql.TIENE_ARROBA_2K8),
+        coordenadasDesde2k12: Boolean(filaSql.coordenadasDesde2k12),
+        direccion2_2k8: filaSql.ORIGEN_BD === '2k8'
+          ? (filaSql.DIRECCION_2_ORIGINAL_2K8 || filaSql.DIRECCION_2 || '').toString().trim()
+          : '',
       };
     });
   }
